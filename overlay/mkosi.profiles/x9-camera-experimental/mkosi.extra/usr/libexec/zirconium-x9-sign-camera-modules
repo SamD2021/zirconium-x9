@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+module_root=/usr/lib/modules
+mapfile -d '' modules < <(
+    find "${module_root}" -type f -path '*/extra/zirconium-x9/*.ko' -print0
+)
+
+if (( ${#modules[@]} == 0 )); then
+    exit 0
+fi
+
+: "${X9_CAMERA_MODULE_SIGNING_KEY:?camera modules require X9_CAMERA_MODULE_SIGNING_KEY}"
+: "${X9_CAMERA_MODULE_SIGNING_CERT:?camera modules require X9_CAMERA_MODULE_SIGNING_CERT}"
+test -f "${X9_CAMERA_MODULE_SIGNING_KEY}"
+test -f "${X9_CAMERA_MODULE_SIGNING_CERT}"
+
+for module in "${modules[@]}"; do
+    relative="${module#"${module_root}/"}"
+    kernel_version="${relative%%/*}"
+    sign_file="/usr/src/kernels/${kernel_version}/scripts/sign-file"
+    test -x "${sign_file}"
+    "${sign_file}" sha256 \
+        "${X9_CAMERA_MODULE_SIGNING_KEY}" \
+        "${X9_CAMERA_MODULE_SIGNING_CERT}" \
+        "${module}"
+done

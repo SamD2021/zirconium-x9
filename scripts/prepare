@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+upstream="${repo_root}/upstream/zirconium"
+overlay="${repo_root}/overlay"
+staged="${repo_root}/.build/zirconium"
+
+if [[ ! -f "${upstream}/mkosi.conf" || ! -f "${upstream}/Justfile" ]]; then
+    echo "Zirconium is unavailable; run: git submodule update --init --recursive" >&2
+    exit 1
+fi
+
+while IFS= read -r -d '' overlay_path; do
+    relative_path="${overlay_path#"${overlay}/"}"
+    if [[ -e "${upstream}/${relative_path}" || -L "${upstream}/${relative_path}" ]]; then
+        echo "Overlay collision with upstream path: ${relative_path}" >&2
+        exit 1
+    fi
+done < <(find "${overlay}" \( -type f -o -type l \) -print0)
+
+mkdir -p "${staged}"
+rsync -a --delete --exclude='.git' "${upstream}/" "${staged}/"
+rsync -a "${overlay}/" "${staged}/"

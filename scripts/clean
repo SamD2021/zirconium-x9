@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+staged="${repo_root}/.build/zirconium"
+
+if [[ ! -d "${staged}" ]]; then
+    exit 0
+fi
+
+if [[ -f "${staged}/mkosi.conf" && -f "${staged}/Justfile" ]]; then
+    (cd "${staged}" && sudo mkosi clean) || true
+fi
+
+rm -rf -- "${staged}"

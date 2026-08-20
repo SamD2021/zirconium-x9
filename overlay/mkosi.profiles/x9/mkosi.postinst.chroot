@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+rpm -q jq nix nix-daemon nix-filesystem
+
+install -d -m 0755 /nix
+
+for unit in \
+    /usr/lib/systemd/system/nix-directory.service \
+    /usr/lib/systemd/system/nix.mount \
+    /usr/lib/systemd/system/nix-daemon.service \
+    /usr/lib/systemd/system/nix-daemon.socket; do
+    test -f "${unit}"
+done
+
+systemd-analyze verify \
+    /usr/lib/systemd/system/nix-directory.service \
+    /usr/lib/systemd/system/nix.mount \
+    /usr/lib/systemd/system/nix-daemon.service \
+    /usr/lib/systemd/system/nix-daemon.socket
+
+policy=/usr/share/factory/etc/containers/policy.json
+public_key=/usr/share/pki/containers/zirconium-x9.pub
+test -f "${policy}"
+test -f "${public_key}"
+
+temporary_policy="$(mktemp)"
+trap 'rm -f -- "${temporary_policy}"' EXIT
+
+jq '
+  .transports.docker["ghcr.io/samd2021/zirconium-x9"] = [{
+    "type": "sigstoreSigned",
+    "keyPath": "/usr/share/pki/containers/zirconium-x9.pub",
+    "signedIdentity": {"type": "matchRepository"}
+  }]
+' "${policy}" >"${temporary_policy}"
+
+install -m 0644 "${temporary_policy}" "${policy}"
+jq -e '.transports.docker["ghcr.io/zirconium-dev"]' "${policy}" >/dev/null
+jq -e '.transports.docker["ghcr.io/samd2021/zirconium-x9"]' "${policy}" >/dev/null

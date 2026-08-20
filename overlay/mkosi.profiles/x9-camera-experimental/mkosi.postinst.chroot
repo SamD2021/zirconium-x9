@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+test -f /usr/lib/zirconium-x9/features/camera-experimental
+/usr/libexec/zirconium-x9-sign-camera-modules

@@ -1,0 +1,166 @@
+name: Build image
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "17 10 * * 3"
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: Image profile to validate
+        required: true
+        default: stable
+        type: choice
+        options:
+          - stable
+          - camera
+
+concurrency:
+  group: build-image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  BUILD_VARIANT: ${{ github.event_name == 'workflow_dispatch' && inputs.variant || 'stable' }}
+  IMAGE_FULL: localhost/zirconium-x9:${{ github.event_name == 'workflow_dispatch' && inputs.variant == 'camera' && 'camera' || 'latest' }}
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPOSITORY: ghcr.io/samd2021/zirconium-x9
+
+jobs:
+  image:
+    name: image
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Free disk space
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          exclude: |
+            /opt/hostedtoolcache/Python
+          skip-if-available: 64G
+
+      - name: Checkout recursively
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+
+      - name: Install mkosi
+        uses: systemd/mkosi@9b7d87a1707e39a42cfb54dce5cf745ef7b99a7e # main
+
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3
+
+      - name: Validate repository inputs
+        run: |
+          set -euo pipefail
+          just --fmt --check
+          bash -n scripts/prepare scripts/clean scripts/assert-image scripts/verify-published-image
+          bash -n overlay/mkosi.profiles/x9/mkosi.postinst.chroot
+          bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.postinst.chroot
+          bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-sign-camera-modules
+          jq -e . .github/renovate.json5 >/dev/null
+          git diff --check
+
+      - name: Assemble source tree
+        run: just prepare
+
+      - name: Render mkosi configuration
+        run: |
+          if [[ "${BUILD_VARIANT}" == camera ]]; then
+            just cat-config-camera
+          else
+            just cat-config
+          fi
+
+      - name: Build image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${BUILD_VARIANT}" == camera ]]; then
+            just build-camera
+          else
+            just build
+          fi
+
+      - name: Load image
+        run: just load
+
+      - name: Rechunk image
+        run: just rechunk
+
+      - name: Assert image contents
+        run: just inspect
+
+      - name: Lint bootc image
+        run: just lint
+
+      - name: Login to GHCR
+        if: github.ref == 'refs/heads/main' && env.BUILD_VARIANT == 'stable' && github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: printf '%s' "${GITHUB_TOKEN}" | podman login --username "${GITHUB_ACTOR}" --password-stdin ghcr.io
+
+      - name: Push signed image
+        id: publish
+        if: github.ref == 'refs/heads/main' && env.BUILD_VARIANT == 'stable' && github.event_name != 'pull_request'
+        env:
+          SIGNING_PRIVATE_KEY: ${{ secrets.SIGNING_PRIVATE_KEY }}
+          SIGNING_PASSPHRASE: ${{ secrets.SIGNING_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          private_key="$(mktemp)"
+          passphrase="$(mktemp)"
+          digest_file="$(mktemp)"
+          registries_file=/etc/containers/registries.d/samd2021.yaml
+          trap 'rm -f -- "${private_key}" "${passphrase}" "${digest_file}"; sudo rm -f -- "${registries_file}"' EXIT
+
+          printf '%s' "${SIGNING_PRIVATE_KEY}" >"${private_key}"
+          printf '%s' "${SIGNING_PASSPHRASE}" >"${passphrase}"
+          sudo mkdir -p /etc/containers/registries.d
+          sudo tee "${registries_file}" >/dev/null <<'EOF'
+          docker:
+            ghcr.io/samd2021:
+              use-sigstore-attachments: true
+          EOF
+
+          short_sha="${GITHUB_SHA:0:12}"
+          date_tag="$(date -u +%Y%m%d)"
+          tags=(latest 44 "sha-${short_sha}" "${date_tag}")
+
+          for tag in "${tags[@]}"; do
+            target="${IMAGE_REPOSITORY}:${tag}"
+            podman tag "${IMAGE_FULL}" "${target}"
+            rm -f -- "${digest_file}"
+            podman push \
+              --retry 3 \
+              --compression-format=zstd \
+              --digestfile="${digest_file}" \
+              --sign-by-sigstore-private-key="${private_key}" \
+              --sign-passphrase-file="${passphrase}" \
+              "${target}" "docker://${target}"
+            if [[ "${tag}" == latest ]]; then
+              printf 'digest=%s\n' "$(<"${digest_file}")" >>"${GITHUB_OUTPUT}"
+            fi
+          done
+
+      - name: Verify published signature
+        if: steps.publish.outcome == 'success'
+        run: ./scripts/verify-published-image "${IMAGE_REPOSITORY}:latest"
+
+      - name: Publish summary
+        if: steps.publish.outcome == 'success'
+        env:
+          PUBLISHED_DIGEST: ${{ steps.publish.outputs.digest }}
+        run: |
+          {
+            echo '### Published image'
+            echo
+            echo "- Reference: \`${IMAGE_REPOSITORY}:latest\`"
+            echo "- Digest: \`${PUBLISHED_DIGEST}\`"
+          } >>"${GITHUB_STEP_SUMMARY}"

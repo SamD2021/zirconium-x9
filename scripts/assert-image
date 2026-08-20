@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image="${1:-localhost/zirconium-x9:latest}"
+
+podman image exists "${image}"
+
+layer_count="$(podman image inspect --format '{{ len .RootFS.Layers }}' "${image}")"
+if (( layer_count > 128 )); then
+    echo "Image has ${layer_count} layers; expected no more than 128" >&2
+    exit 1
+fi
+
+podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
+    rpm -q nix nix-daemon nix-filesystem
+    test -d /nix
+    test -f /usr/lib/systemd/system/nix-directory.service
+    test -f /usr/lib/systemd/system/nix.mount
+    test -f /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf
+    test -f /usr/lib/systemd/system/nix-daemon.socket.d/10-nix-mount.conf
+    test -f /usr/share/pki/containers/zirconium-x9.pub
+    test -f /usr/share/factory/etc/containers/registries.d/samd2021.yaml
+    test -f /usr/lib/ostree/prepare-root.conf
+    test -n "$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"
+    test -n "$(find /usr/lib/modules -name initramfs.img -type f -print -quit)"
+    jq -e '\''
+      .transports.docker["ghcr.io/zirconium-dev"] and
+      .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].type == "sigstoreSigned" and
+      .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].signedIdentity.type == "matchRepository"
+    '\'' /usr/share/factory/etc/containers/policy.json >/dev/null
+    systemd-analyze verify \
+      /usr/lib/systemd/system/nix-directory.service \
+      /usr/lib/systemd/system/nix.mount \
+      /usr/lib/systemd/system/nix-daemon.service \
+      /usr/lib/systemd/system/nix-daemon.socket
+'
+
+printf 'Validated %s (%s layers)\n' "${image}" "${layer_count}"

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+reference="${1:-ghcr.io/samd2021/zirconium-x9:latest}"
+repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+public_key="${repo_root}/overlay/mkosi.profiles/x9/mkosi.extra/usr/share/pki/containers/zirconium-x9.pub"
+work_dir="$(mktemp -d)"
+trap 'rm -rf -- "${work_dir}"' EXIT
+
+mkdir -p "${work_dir}/registries.d"
+cat >"${work_dir}/policy.json" <<EOF
+{
+  "default": [{"type": "reject"}],
+  "transports": {
+    "docker": {
+      "ghcr.io/samd2021/zirconium-x9": [{
+        "type": "sigstoreSigned",
+        "keyPath": "${public_key}",
+        "signedIdentity": {"type": "matchRepository"}
+      }]
+    }
+  }
+}
+EOF
+cat >"${work_dir}/registries.d/samd2021.yaml" <<'EOF'
+docker:
+  ghcr.io/samd2021:
+    use-sigstore-attachments: true
+EOF
+
+skopeo --policy "${work_dir}/policy.json" --registries.d "${work_dir}/registries.d" inspect "docker://${reference}"

@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/samd2021:
+    use-sigstore-attachments: true

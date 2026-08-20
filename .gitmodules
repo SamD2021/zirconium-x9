@@ -1,0 +1,4 @@
+[submodule "upstream/zirconium"]
+	path = upstream/zirconium
+	url = https://github.com/zirconium-dev/zirconium.git
+	branch = main

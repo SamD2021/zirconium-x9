@@ -1,0 +1,2 @@
+This image contains camera integration scaffolding only.
+No IPU7 firmware, kernel modules, HAL, or camera userspace stack is installed.
