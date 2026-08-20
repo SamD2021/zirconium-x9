@@ -1,7 +1,9 @@
 [Unit]
 Description=Create the persistent Nix store directory
+DefaultDependencies=no
 RequiresMountsFor=/var
-Before=nix.mount
+After=local-fs-pre.target
+Before=nix.mount local-fs.target
 
 [Service]
 Type=oneshot
