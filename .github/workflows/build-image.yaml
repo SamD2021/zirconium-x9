@@ -122,12 +122,13 @@ jobs:
 
           printf '%s' "${SIGNING_PRIVATE_KEY}" >"${private_key}"
           printf '%s' "${SIGNING_PASSPHRASE}" >"${passphrase}"
-          sudo mkdir -p /etc/containers/registries.d
+          sudo install -d -m 0755 /etc/containers/registries.d
           sudo tee "${registries_file}" >/dev/null <<'EOF'
           docker:
             ghcr.io/samd2021:
               use-sigstore-attachments: true
           EOF
+          sudo chmod 0644 "${registries_file}"
 
           short_sha="${GITHUB_SHA:0:12}"
           date_tag="$(date -u +%Y%m%d)"
