@@ -1,2 +1,4 @@
-This image contains camera integration scaffolding only.
-No IPU7 firmware, kernel modules, HAL, or camera userspace stack is installed.
+This image contains unsupported X9 camera integration.
+It installs pinned Intel IPU7 firmware, Fedora's in-tree camera stack, an
+experimental IMX471 SoftISP color profile, and X9-specific low-light timing.
+No out-of-tree kernel module, proprietary camera HAL, or MOK key is included.

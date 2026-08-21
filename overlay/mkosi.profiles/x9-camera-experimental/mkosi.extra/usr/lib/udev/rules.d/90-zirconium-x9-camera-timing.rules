@@ -1,0 +1,3 @@
+# The IMX471's only Fedora mode defaults to roughly 60 fps, limiting exposure.
+# Raise its exposure ceiling before libcamera reads the control limits.
+ACTION=="add", SUBSYSTEM=="video4linux", KERNEL=="v4l-subdev*", ATTR{name}=="imx471 *", TAG+="systemd", ENV{SYSTEMD_WANTS}+="zirconium-x9-camera-timing@%k.service"

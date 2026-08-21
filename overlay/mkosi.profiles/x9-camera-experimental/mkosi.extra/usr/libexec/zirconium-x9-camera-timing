@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+device="${1:?usage: zirconium-x9-camera-timing /dev/v4l-subdevN}"
+device_name="${device##*/}"
+sysfs_name="/sys/class/video4linux/${device_name}/name"
+
+[[ "${device}" == /dev/v4l-subdev* ]]
+[[ -c "${device}" ]]
+[[ -r "${sysfs_name}" ]]
+[[ "$(<"${sysfs_name}")" == "imx471 "* ]]
+
+# 1203 blanking lines raise the exposure ceiling from 1290 to 2273 while
+# keeping the measured stream near 33 fps. Leave sensor digital gain at its
+# native 256 (1x): higher values amplify noise and make the current Intel GPU
+# synchronization artifact much more visible.
+/usr/bin/v4l2-ctl --device="${device}" \
+    --set-ctrl=vertical_blanking=1203,digital_gain=256
