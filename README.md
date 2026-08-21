@@ -8,8 +8,9 @@ The stable profile adds Fedora's Nix packages and persists `/nix` through a
 bind mount backed by `/var/lib/nix`. It also corrects the X9's combined
 CS35L56/CS42L43 UCM speaker sequence so the CS42L43-driven tweeter pair is
 enabled with the main speakers and disabled during headphone switching. The
-camera profile is an unsupported hardware-validation image and is deliberately
-excluded from stable publication.
+validated X9 camera payload is also included in the stable image; its Mesa
+llvmpipe workaround remains temporary until the Intel GPU synchronization bug
+is fixed.
 
 ## Local commands
 
@@ -22,14 +23,15 @@ just rechunk
 just lint
 ```
 
-`just build-camera` composes the isolated camera image. It adds pinned Intel
-IPU7 firmware, Fedora's in-tree IPU7/IMX471 and libcamera stack, experimental
-IMX471 SoftISP color tuning, and a verified roughly 33 fps low-light timing
-profile.
+Stable builds add pinned Intel IPU7 firmware, Fedora's in-tree IPU7/IMX471 and
+libcamera stack, experimental IMX471 SoftISP color tuning, and a verified
+roughly 33 fps low-light timing profile.
 It does not add an out-of-tree kernel module, proprietary camera HAL, or MOK
-material. Publication is isolated to the manually dispatched `camera` tag.
+material. `just build-camera` and the manually dispatched `camera` variant
+retain a distinct experimental image identity for focused camera validation,
+but contain the same camera payload as `latest`.
 
-After booting a locally built camera image, verify the host stack with:
+After booting an X9 image, verify the host stack with:
 
 ```bash
 cam -l
@@ -46,9 +48,10 @@ workaround for the Intel GPU synchronization bug tracked in Red Hat bug
 [2502786](https://bugzilla.redhat.com/show_bug.cgi?id=2502786). This removes
 the colored horizontal bands without granting broad host filesystem access.
 
-After camera support changes merge to `main`, the manual `camera` workflow
-builds, rechunks, asserts, lints, signs, and publishes only
-`ghcr.io/samd2021/zirconium-x9:camera`. It never moves the stable tags.
+The manual `camera` workflow builds, rechunks, asserts, lints, signs, and
+publishes `ghcr.io/samd2021/zirconium-x9:camera` without moving stable tags.
+Normal `main` builds include the camera payload and publish `latest`, `44`, the
+commit tag, and the UTC date tag.
 
 The stable image is published as `ghcr.io/samd2021/zirconium-x9:latest` after
 the complete build, rechunk, assertion, lint, and signing pipeline succeeds.
