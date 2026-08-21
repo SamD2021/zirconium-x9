@@ -1,0 +1,8 @@
+[Unit]
+Description=Configure Zirconium X9 IMX471 timing on %I
+Documentation=https://github.com/SamD2021/zirconium-x9
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/zirconium-x9-camera-timing /dev/%I
+RemainAfterExit=yes

@@ -2,4 +2,45 @@
 set -euo pipefail
 
 test -f /usr/lib/zirconium-x9/features/camera-experimental
+test -f /usr/lib/firmware/intel/ipu/ipu7ptl_fw.bin
+test -f /usr/share/libcamera/ipa/simple/imx471.yaml
+test -f /usr/share/licenses/ipu7-camera-bins/LICENSE
+test -f /usr/share/licenses/zirconium-x9-imx471-tuning/CC0-1.0.txt
+test -x /usr/libexec/zirconium-x9-camera-timing
+test -f /usr/lib/udev/rules.d/90-zirconium-x9-camera-timing.rules
+test -f /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
+test -f /usr/lib/tmpfiles.d/zirconium-x9-camera.conf
+test -f /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+grep --fixed-strings --quiet \
+    'LIBGL_ALWAYS_SOFTWARE=1' \
+    /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+grep --fixed-strings --quiet \
+    'filesystems=/var/lib/zirconium-x9-camera/imx471.yaml:ro;' \
+    /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+
+printf '%s  %s\n' \
+    8ce12bc3c4355d589a8ad97bebbb036909e5985990ce1cf37789ce60fb52720f \
+    /usr/lib/firmware/intel/ipu/ipu7ptl_fw.bin | sha256sum --check --strict
+printf '%s  %s\n' \
+    93752fc6abbc286446636bd45d335f75f25d34c704ea636d92cf94c544ae0cc3 \
+    /usr/share/libcamera/ipa/simple/imx471.yaml | sha256sum --check --strict
+
+rpm --quiet --query \
+    libcamera \
+    libcamera-gstreamer \
+    libcamera-ipa \
+    libcamera-tools \
+    pipewire-plugin-libcamera \
+    v4l-utils
+
+test -n "$(find /usr/lib/modules -type f -name 'intel-ipu7.ko*' -print -quit)"
+test -n "$(find /usr/lib/modules -type f -name 'intel-ipu7-isys.ko*' -print -quit)"
+test -n "$(find /usr/lib/modules -type f -name 'imx471.ko*' -print -quit)"
+
+systemd-analyze verify \
+    /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
+
+systemd-tmpfiles --dry-run --create --root=/ \
+    /usr/lib/tmpfiles.d/zirconium-x9-camera.conf
+
 /usr/libexec/zirconium-x9-sign-camera-modules

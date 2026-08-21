@@ -33,6 +33,33 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       /usr/lib/systemd/system/nix.mount \
       /usr/lib/systemd/system/nix-daemon.service \
       /usr/lib/systemd/system/nix-daemon.socket
+
+    if test -f /usr/lib/zirconium-x9/features/camera-experimental; then
+      rpm -q \
+        libcamera \
+        libcamera-gstreamer \
+        libcamera-ipa \
+        libcamera-tools \
+        pipewire-plugin-libcamera \
+        v4l-utils
+      printf "%s  %s\n" \
+        8ce12bc3c4355d589a8ad97bebbb036909e5985990ce1cf37789ce60fb52720f \
+        /usr/lib/firmware/intel/ipu/ipu7ptl_fw.bin | sha256sum --check --strict
+      printf "%s  %s\n" \
+        93752fc6abbc286446636bd45d335f75f25d34c704ea636d92cf94c544ae0cc3 \
+        /usr/share/libcamera/ipa/simple/imx471.yaml | sha256sum --check --strict
+      test -x /usr/libexec/zirconium-x9-camera-timing
+      test -f /usr/lib/udev/rules.d/90-zirconium-x9-camera-timing.rules
+      test -f /usr/lib/tmpfiles.d/zirconium-x9-camera.conf
+      test -f /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+      test -f /usr/share/doc/zirconium-x9-camera/PROVENANCE.md
+      grep -Fqx "LIBGL_ALWAYS_SOFTWARE=1" \
+        /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+      grep -Fqx "filesystems=/var/lib/zirconium-x9-camera/imx471.yaml:ro;" \
+        /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
+      systemd-analyze verify \
+        /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
+    fi
 '
 
 printf 'Validated %s (%s layers)\n' "${image}" "${layer_count}"

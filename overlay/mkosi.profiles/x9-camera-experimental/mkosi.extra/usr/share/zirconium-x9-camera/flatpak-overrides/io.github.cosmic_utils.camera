@@ -1,0 +1,7 @@
+[Context]
+filesystems=/var/lib/zirconium-x9-camera/imx471.yaml:ro;
+
+[Environment]
+LIBGL_ALWAYS_SOFTWARE=1
+LIBCAMERA_SIMPLE_TUNING_FILE=/var/lib/zirconium-x9-camera/imx471.yaml
+LIBCAMERA_SOFTISP_MODE=gpu
