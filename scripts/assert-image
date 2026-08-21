@@ -54,6 +54,9 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
         /usr/share/libcamera/ipa/simple/imx471.yaml | sha256sum --check --strict
       test -x /usr/libexec/zirconium-x9-camera-timing
       test -f /usr/lib/udev/rules.d/90-zirconium-x9-camera-timing.rules
+      grep -Fqx \
+        "ExecStart=/usr/libexec/zirconium-x9-camera-timing /dev/%i" \
+        /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
       test -f /usr/lib/tmpfiles.d/zirconium-x9-camera.conf
       test -f /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
       test -f /usr/share/doc/zirconium-x9-camera/PROVENANCE.md

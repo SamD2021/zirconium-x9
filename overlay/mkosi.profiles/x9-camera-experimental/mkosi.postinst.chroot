@@ -9,6 +9,9 @@ test -f /usr/share/licenses/zirconium-x9-imx471-tuning/CC0-1.0.txt
 test -x /usr/libexec/zirconium-x9-camera-timing
 test -f /usr/lib/udev/rules.d/90-zirconium-x9-camera-timing.rules
 test -f /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
+grep --fixed-strings --line-regexp --quiet \
+    'ExecStart=/usr/libexec/zirconium-x9-camera-timing /dev/%i' \
+    /usr/lib/systemd/system/zirconium-x9-camera-timing@.service
 test -f /usr/lib/tmpfiles.d/zirconium-x9-camera.conf
 test -f /usr/share/zirconium-x9-camera/flatpak-overrides/io.github.cosmic_utils.camera
 grep --fixed-strings --quiet \
