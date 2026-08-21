@@ -12,8 +12,12 @@ if (( layer_count > 128 )); then
 fi
 
 podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
-    rpm -q chatgpt nix nix-daemon nix-filesystem
+    rpm -q alsa-ucm chatgpt nix nix-daemon nix-filesystem
     test -d /nix
+    speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
+    test -f "${speaker_ucm}"
+    grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 1\"" "${speaker_ucm}"
+    grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 0\"" "${speaker_ucm}"
     test -f /usr/lib/systemd/system/nix-directory.service
     test -f /usr/lib/systemd/system/nix.mount
     test -f /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf

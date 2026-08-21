@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rpm -q chatgpt jq nix nix-daemon nix-filesystem
+rpm -q alsa-ucm chatgpt jq nix nix-daemon nix-filesystem
 
 install -d -m 0755 /nix
+
+speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
+test -f "${speaker_ucm}"
+grep -Fq "cset \"name='cs42l43 Speaker Digital Switch' 1\"" "${speaker_ucm}"
+grep -Fq "cset \"name='cs42l43 Speaker Digital Switch' 0\"" "${speaker_ucm}"
 
 for unit in \
     /usr/lib/systemd/system/nix-directory.service \
