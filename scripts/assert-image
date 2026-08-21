@@ -12,7 +12,7 @@ if (( layer_count > 128 )); then
 fi
 
 podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
-    rpm -q nix nix-daemon nix-filesystem
+    rpm -q chatgpt nix nix-daemon nix-filesystem
     test -d /nix
     test -f /usr/lib/systemd/system/nix-directory.service
     test -f /usr/lib/systemd/system/nix.mount

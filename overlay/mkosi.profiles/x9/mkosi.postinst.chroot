@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rpm -q jq nix nix-daemon nix-filesystem
+rpm -q chatgpt jq nix nix-daemon nix-filesystem
 
 install -d -m 0755 /nix
 
