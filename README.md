@@ -5,9 +5,11 @@ An AMD64 bootc image for the Lenovo ThinkPad X9 15p Aura, built from
 overlay.
 
 The stable profile adds Fedora's Nix packages and persists `/nix` through a
-bind mount backed by `/var/lib/nix`. Audio customization is intentionally out
-of scope. The camera profile is an unsupported hardware-validation image and
-is deliberately excluded from stable publication.
+bind mount backed by `/var/lib/nix`. It also corrects the X9's combined
+CS35L56/CS42L43 UCM speaker sequence so the CS42L43-driven tweeter pair is
+enabled with the main speakers and disabled during headphone switching. The
+camera profile is an unsupported hardware-validation image and is deliberately
+excluded from stable publication.
 
 ## Local commands
 
