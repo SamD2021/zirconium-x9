@@ -1,8 +1,9 @@
-# Zirconium X9 experimental camera payload
+# Zirconium X9 camera payload
 
 This profile targets the internal `TBE20A0` Sony IMX471 camera in the Lenovo
-ThinkPad X9 15p Aura (Intel Panther Lake IPU7). It remains unsupported and is
-not published as a stable image.
+ThinkPad X9 15p Aura (Intel Panther Lake IPU7). It is included in the stable
+X9 image after validation on the target laptop. The llvmpipe workaround
+remains experimental until the Intel GPU synchronization bug is fixed.
 
 ## Intel IPU7 firmware
 
@@ -26,8 +27,8 @@ decompiled, disassembled, or modified.
   `/usr/share/licenses/zirconium-x9-imx471-tuning/`.
 
 The tuning starts with a diagonal color-correction matrix measured on another
-Panther Lake IMX471 module. Module-to-module variation is possible, so stable
-promotion requires calibration on the target laptop.
+Panther Lake IMX471 module. It was then validated on the target X9 laptop;
+module-to-module variation remains possible.
 
 ## Live verification
 

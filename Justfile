@@ -1,8 +1,9 @@
 set dotenv-load := false
 
 staged := ".build/zirconium"
-stable_profiles := "base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree,x9"
-camera_profiles := stable_profiles + ",x9-camera-experimental"
+base_profiles := "base,base-desktop,bootc-ostree,brew,zirconium-bootc-ostree"
+stable_profiles := base_profiles + ",x9-camera-experimental,x9"
+camera_profiles := base_profiles + ",x9,x9-camera-experimental"
 image := env("IMAGE_FULL", "localhost/zirconium-x9:latest")
 
 default:
