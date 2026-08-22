@@ -10,7 +10,9 @@ CS35L56/CS42L43 UCM speaker sequence so the CS42L43-driven tweeter pair is
 enabled with the main speakers and disabled during headphone switching. The
 validated X9 camera payload is also included in the stable image; its Mesa
 llvmpipe workaround remains temporary until the Intel GPU synchronization bug
-is fixed.
+is fixed. The official ChatGPT launcher selects Chromium's native Wayland
+Ozone backend, including Wayland input-method support, for both desktop and
+terminal launches.
 
 ## Local commands
 

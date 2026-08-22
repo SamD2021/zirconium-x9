@@ -3,6 +3,21 @@ set -euo pipefail
 
 rpm -q alsa-ucm chatgpt jq nix nix-daemon nix-filesystem
 
+# Both desktop and terminal launches pass through the RPM's wrapper. Chromium's
+# command-line switches are stable across Electron versions; its old Ozone
+# environment-variable hint is not.
+chatgpt_launcher=/usr/lib/chatgpt/codex-launcher
+test -f "${chatgpt_launcher}"
+grep -Fqx \
+    'exec "$(dirname "$(readlink -f "$0")")/ChatGPT" "$@"' \
+    "${chatgpt_launcher}"
+sed -i \
+    's|/ChatGPT" "$@"|/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"|' \
+    "${chatgpt_launcher}"
+grep -Fqx \
+    'exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"' \
+    "${chatgpt_launcher}"
+
 install -d -m 0755 /nix
 
 speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
