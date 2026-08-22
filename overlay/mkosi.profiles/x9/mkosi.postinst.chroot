@@ -8,7 +8,13 @@ rpm -q \
     nix \
     nix-daemon \
     nix-filesystem \
-    policycoreutils-python-utils
+    policycoreutils-python-utils \
+    pulseaudio-utils
+
+# DMS represents Bluetooth codecs as PulseAudio-compatible card profiles and
+# uses pactl to enumerate and select them. pipewire-pulseaudio remains the
+# server; pulseaudio-utils supplies only the compatible client CLI.
+test -x /usr/bin/pactl
 
 # Both desktop and terminal launches pass through the RPM's wrapper. Chromium's
 # command-line switches are stable across Electron versions; its old Ozone
