@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rpm -q alsa-ucm chatgpt jq nix nix-daemon nix-filesystem
+rpm -q \
+    alsa-ucm \
+    chatgpt \
+    jq \
+    nix \
+    nix-daemon \
+    nix-filesystem \
+    policycoreutils-python-utils
 
 # Both desktop and terminal launches pass through the RPM's wrapper. Chromium's
 # command-line switches are stable across Electron versions; its old Ozone
@@ -20,6 +27,22 @@ grep -Fqx \
 
 install -d -m 0755 /nix
 
+# The persistent store is exposed through /nix, so label both its backing path
+# and its mounted path. Baking these rules into the image keeps the SELinux
+# policy identical across upgrades instead of requiring host-local semanage
+# changes that make an otherwise compatible deployment require a hard reboot.
+for nix_socket_path in \
+    '/var/lib/nix/var/nix/daemon-socket(/.*)?' \
+    '/nix/var/nix/daemon-socket(/.*)?'; do
+    semanage fcontext -a -t var_run_t "${nix_socket_path}" 2>/dev/null || \
+        semanage fcontext -m -t var_run_t "${nix_socket_path}"
+done
+
+test "$(matchpathcon -n /var/lib/nix/var/nix/daemon-socket)" = \
+    "system_u:object_r:var_run_t:s0"
+test "$(matchpathcon -n /nix/var/nix/daemon-socket)" = \
+    "system_u:object_r:var_run_t:s0"
+
 speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
 test -f "${speaker_ucm}"
 grep -Fq "cset \"name='cs42l43 Speaker Digital Switch' 1\"" "${speaker_ucm}"
@@ -35,6 +58,7 @@ grep -Fqx '        priority.session = 500' "${dock_audio_rule}"
 for unit in \
     /usr/lib/systemd/system/nix-directory.service \
     /usr/lib/systemd/system/nix.mount \
+    /usr/lib/systemd/system/nix-state-prepare.service \
     /usr/lib/systemd/system/nix-daemon.service \
     /usr/lib/systemd/system/nix-daemon.socket; do
     test -f "${unit}"
@@ -43,6 +67,7 @@ done
 systemd-analyze verify \
     /usr/lib/systemd/system/nix-directory.service \
     /usr/lib/systemd/system/nix.mount \
+    /usr/lib/systemd/system/nix-state-prepare.service \
     /usr/lib/systemd/system/nix-daemon.service \
     /usr/lib/systemd/system/nix-daemon.socket
 

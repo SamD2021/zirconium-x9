@@ -5,7 +5,11 @@ An AMD64 bootc image for the Lenovo ThinkPad X9 15p Aura, built from
 overlay.
 
 The stable profile adds Fedora's Nix packages and persists `/nix` through a
-bind mount backed by `/var/lib/nix`. It also corrects the X9's combined
+bind mount backed by `/var/lib/nix`. A boot-time preparation service recreates
+the store directories hidden by that mount and restores the Nix daemon
+socket's baked-in SELinux context before socket activation. This avoids the
+host-local `semanage` policy difference that previously prevented otherwise
+compatible image updates from using bootc soft reboot. It also corrects the X9's combined
 CS35L56/CS42L43 UCM speaker sequence so the CS42L43-driven tweeter pair is
 enabled with the main speakers and disabled during headphone switching. The
 ThinkPad Thunderbolt 4 Dock analog jack remains manually selectable but has a

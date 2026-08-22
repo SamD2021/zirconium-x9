@@ -12,7 +12,13 @@ if (( layer_count > 128 )); then
 fi
 
 podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
-    rpm -q alsa-ucm chatgpt nix nix-daemon nix-filesystem
+    rpm -q \
+      alsa-ucm \
+      chatgpt \
+      nix \
+      nix-daemon \
+      nix-filesystem \
+      policycoreutils-python-utils
     test -d /nix
     grep -Fqx \
       '\''exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"'\'' \
@@ -30,8 +36,26 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     grep -Fqx "        priority.session = 500" "${dock_audio_rule}"
     test -f /usr/lib/systemd/system/nix-directory.service
     test -f /usr/lib/systemd/system/nix.mount
+    test -f /usr/lib/systemd/system/nix-state-prepare.service
     test -f /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf
     test -f /usr/lib/systemd/system/nix-daemon.socket.d/10-nix-mount.conf
+    test -f /usr/lib/tmpfiles.d/10-zirconium-x9-nix.conf
+    grep -Fqx "d /nix/store             1775 root nixbld - -" \
+      /usr/lib/tmpfiles.d/10-zirconium-x9-nix.conf
+    grep -Fqx "d /nix/var/nix           0755 root root   - -" \
+      /usr/lib/tmpfiles.d/10-zirconium-x9-nix.conf
+    grep -Fqx "d /nix/var/log/nix/drvs  0755 root root   - -" \
+      /usr/lib/tmpfiles.d/10-zirconium-x9-nix.conf
+    grep -Fqx "Requires=nix.mount nix-state-prepare.service" \
+      /usr/lib/systemd/system/nix-daemon.socket.d/10-nix-mount.conf
+    grep -Fqx "Requires=nix.mount nix-state-prepare.service" \
+      /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf
+    grep -Fqx "ExecStart=/usr/bin/restorecon -RF /nix/var/nix/daemon-socket" \
+      /usr/lib/systemd/system/nix-state-prepare.service
+    test "$(matchpathcon -n /var/lib/nix/var/nix/daemon-socket)" = \
+      "system_u:object_r:var_run_t:s0"
+    test "$(matchpathcon -n /nix/var/nix/daemon-socket)" = \
+      "system_u:object_r:var_run_t:s0"
     test -f /usr/share/pki/containers/zirconium-x9.pub
     test -f /usr/share/factory/etc/containers/registries.d/samd2021.yaml
     test -f /usr/lib/ostree/prepare-root.conf
@@ -45,6 +69,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     systemd-analyze verify \
       /usr/lib/systemd/system/nix-directory.service \
       /usr/lib/systemd/system/nix.mount \
+      /usr/lib/systemd/system/nix-state-prepare.service \
       /usr/lib/systemd/system/nix-daemon.service \
       /usr/lib/systemd/system/nix-daemon.socket
 
