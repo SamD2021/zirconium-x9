@@ -8,7 +8,10 @@ The stable profile adds Fedora's Nix packages and persists `/nix` through a
 bind mount backed by `/var/lib/nix`. It also corrects the X9's combined
 CS35L56/CS42L43 UCM speaker sequence so the CS42L43-driven tweeter pair is
 enabled with the main speakers and disabled during headphone switching. The
-validated X9 camera payload is also included in the stable image; its Mesa
+ThinkPad Thunderbolt 4 Dock analog jack remains manually selectable but has a
+lower automatic WirePlumber priority than the built-in speakers, so connecting
+the dock does not steal audio output. The validated X9 camera payload is also
+included in the stable image; its Mesa
 llvmpipe workaround remains temporary until the Intel GPU synchronization bug
 is fixed. The official ChatGPT launcher selects Chromium's native Wayland
 Ozone backend, including Wayland input-method support, for both desktop and

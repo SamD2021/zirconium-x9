@@ -22,6 +22,12 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     test -f "${speaker_ucm}"
     grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 1\"" "${speaker_ucm}"
     grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 0\"" "${speaker_ucm}"
+    dock_audio_rule=/usr/share/wireplumber/wireplumber.conf.d/90-zirconium-x9-dock-audio.conf
+    test -f "${dock_audio_rule}"
+    grep -Fqx \
+      "        node.name = \"~alsa_output[.]usb-Lenovo_ThinkPad_Thunderbolt_4_Dock_USB_Audio_.*[.]analog-stereo\$\"" \
+      "${dock_audio_rule}"
+    grep -Fqx "        priority.session = 500" "${dock_audio_rule}"
     test -f /usr/lib/systemd/system/nix-directory.service
     test -f /usr/lib/systemd/system/nix.mount
     test -f /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf
