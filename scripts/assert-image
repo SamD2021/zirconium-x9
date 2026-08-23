@@ -18,7 +18,9 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       nix \
       nix-daemon \
       nix-filesystem \
-      policycoreutils-python-utils
+      policycoreutils-python-utils \
+      pulseaudio-utils
+    test -x /usr/bin/pactl
     test -d /nix
     grep -Fqx \
       '\''exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"'\'' \
