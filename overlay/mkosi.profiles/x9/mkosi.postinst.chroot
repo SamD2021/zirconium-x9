@@ -64,6 +64,14 @@ for unit in \
     test -f "${unit}"
 done
 
+# nix-daemon.socket is pulled in by sockets.target, which precedes basic.target.
+# Keep its prerequisite out of the normal service dependency chain or systemd
+# will break the sockets.target -> basic.target ordering cycle at boot.
+grep -Fqx 'DefaultDependencies=no' \
+    /usr/lib/systemd/system/nix-state-prepare.service
+grep -Fqx 'Before=sockets.target nix-daemon.service nix-daemon.socket' \
+    /usr/lib/systemd/system/nix-state-prepare.service
+
 systemd-analyze verify \
     /usr/lib/systemd/system/nix-directory.service \
     /usr/lib/systemd/system/nix.mount \

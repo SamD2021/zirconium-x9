@@ -1,8 +1,9 @@
 [Unit]
 Description=Prepare persistent Nix state and SELinux labels
+DefaultDependencies=no
 Requires=nix.mount
 After=nix.mount systemd-sysusers.service
-Before=nix-daemon.service nix-daemon.socket
+Before=sockets.target nix-daemon.service nix-daemon.socket
 
 [Service]
 Type=oneshot
