@@ -1,0 +1,3 @@
+# 1Password custom browser allowlist
+# Zen Browser's root-owned AppImage extraction runs this executable.
+zen

@@ -13,6 +13,7 @@ fi
 
 podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     rpm -q \
+      1password \
       alsa-ucm \
       chatgpt \
       nix \
@@ -20,6 +21,35 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       nix-filesystem \
       policycoreutils-python-utils \
       pulseaudio-utils
+    onepassword_version="$(rpm -q --qf "%{VERSION}\n" 1password)"
+    test "$(printf "%s\n" 8.12.32 "${onepassword_version}" | sort -V | head -n1)" = 8.12.32
+    onepassword_root=/usr/lib/1Password
+    onepassword_helper=${onepassword_root}/1Password-BrowserSupport
+    onepassword_mcp=${onepassword_root}/1password-mcp
+    onepassword_sandbox=${onepassword_root}/chrome-sandbox
+    test -x "$(command -v 1password)"
+    test -f /usr/share/applications/1password.desktop
+    grep -Fqx "Exec=/usr/bin/1password %U" /usr/share/applications/1password.desktop
+    test -f /usr/share/polkit-1/actions/com.1password.1Password.policy
+    test -x "${onepassword_helper}"
+    test "$(stat -c "%a:%U:%G" "${onepassword_helper}")" = 2755:root:onepassword
+    test "$(getent group onepassword | cut -d: -f3)" = 1001
+    test "$(stat -c "%a:%U:%G" "${onepassword_mcp}")" = 2755:root:onepassword-mcp
+    test "$(getent group onepassword-mcp | cut -d: -f3)" = 1002
+    test "$(stat -c "%a:%U:%G" "${onepassword_sandbox}")" = 4755:root:root
+    test "$(readlink /usr/bin/1password)" = /usr/lib/1Password/1password
+    test "$(readlink /usr/bin/1Password-BrowserSupport)" = /usr/lib/1Password/1Password-BrowserSupport
+    test "$(readlink /usr/bin/1Password-Crash-Handler)" = /usr/lib/1Password/1Password-Crash-Handler
+    test "$(readlink /usr/bin/1password-mcp)" = /usr/lib/1Password/1password-mcp
+    grep -Fqx zen /usr/share/factory/etc/1password/custom_allowed_browsers
+    grep -Fqx \
+      "L+ /etc/1password/custom_allowed_browsers - - - - /usr/share/factory/etc/1password/custom_allowed_browsers" \
+      /usr/lib/tmpfiles.d/10-zirconium-x9-containers.conf
+    grep -Fqx "g onepassword 1001" \
+      /usr/lib/sysusers.d/zirconium-x9-1password.conf
+    grep -Fqx "g onepassword-mcp 1002" \
+      /usr/lib/sysusers.d/zirconium-x9-1password.conf
+    test -f /usr/share/pki/rpm-gpg/RPM-GPG-KEY-1password
     test -x /usr/bin/pactl
     test -d /nix
     grep -Fqx \

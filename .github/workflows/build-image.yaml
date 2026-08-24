@@ -59,7 +59,8 @@ jobs:
         run: |
           set -euo pipefail
           just --fmt --check
-          bash -n scripts/prepare scripts/clean scripts/assert-image scripts/verify-published-image
+          bash -n scripts/prepare scripts/clean scripts/assert-image scripts/verify-published-image scripts/verify-1password-key
+          scripts/verify-1password-key
           bash -n overlay/mkosi.profiles/x9/mkosi.postinst.chroot
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.postinst.chroot
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-sign-camera-modules

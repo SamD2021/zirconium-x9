@@ -2,6 +2,7 @@
 set -euo pipefail
 
 rpm -q \
+    1password \
     alsa-ucm \
     chatgpt \
     jq \
@@ -10,6 +11,98 @@ rpm -q \
     nix-filesystem \
     policycoreutils-python-utils \
     pulseaudio-utils
+
+onepassword_version="$(rpm -q --qf '%{VERSION}\n' 1password)"
+if [[ "$(printf '%s\n' 8.12.32 "${onepassword_version}" | sort -V | head -n1)" != 8.12.32 ]]; then
+    echo "1Password ${onepassword_version} is older than required 8.12.32" >&2
+    exit 1
+fi
+
+onepassword_root=/usr/lib/1Password
+test -d /opt/1Password
+test ! -e "${onepassword_root}"
+mv /opt/1Password "${onepassword_root}"
+
+onepassword_helper=${onepassword_root}/1Password-BrowserSupport
+onepassword_mcp=${onepassword_root}/1password-mcp
+onepassword_sandbox=${onepassword_root}/chrome-sandbox
+onepassword_crash_handler=${onepassword_root}/1Password-Crash-Handler
+
+# /etc persists across bootc updates, so dynamically allocated package groups
+# can diverge from the numeric GIDs stored on immutable helper binaries. Keep
+# these IDs stable; this also matches the existing X9 onepassword group.
+ensure_group_gid() {
+    local name="$1"
+    local gid="$2"
+    local current_gid owner
+
+    if getent group "${name}" >/dev/null; then
+        current_gid="$(getent group "${name}" | cut -d: -f3)"
+        [[ "${current_gid}" == "${gid}" ]] && return
+    fi
+
+    owner="$(getent group "${gid}" | cut -d: -f1 || true)"
+    if [[ -n "${owner}" && "${owner}" != "${name}" ]]; then
+        echo "Cannot assign GID ${gid} to ${name}; it belongs to ${owner}" >&2
+        exit 1
+    fi
+
+    if getent group "${name}" >/dev/null; then
+        groupmod --gid "${gid}" "${name}"
+    else
+        groupadd --gid "${gid}" "${name}"
+    fi
+}
+
+# The vendor script allocates these as 1000 and 1001 in a clean Fedora root.
+# Move MCP first to free 1001 for the browser-support group used on the X9.
+ensure_group_gid onepassword-mcp 1002
+ensure_group_gid onepassword 1001
+
+chgrp onepassword "${onepassword_helper}"
+chmod 2755 "${onepassword_helper}"
+chmod 4755 "${onepassword_sandbox}"
+ln -sfn "${onepassword_root}/1password" /usr/bin/1password
+ln -sfn "${onepassword_helper}" /usr/bin/1Password-BrowserSupport
+ln -sfn "${onepassword_crash_handler}" /usr/bin/1Password-Crash-Handler
+
+chgrp onepassword-mcp "${onepassword_mcp}"
+chmod 2755 "${onepassword_mcp}"
+ln -sfn "${onepassword_mcp}" "${onepassword_root}/onepassword-mcp"
+ln -sfn "${onepassword_mcp}" /usr/bin/1password-mcp
+
+# The RPM creates these groups while composing the image, but /etc persists
+# across bootc upgrades. Recreate missing names with the same deterministic
+# IDs on both new installations and upgraded systems.
+cat >/usr/lib/sysusers.d/zirconium-x9-1password.conf <<'EOF'
+g onepassword 1001
+g onepassword-mcp 1002
+EOF
+
+sed -i \
+    's|^Exec=/opt/1Password/1password|Exec=/usr/bin/1password|' \
+    /usr/share/applications/1password.desktop
+
+test -x "$(command -v 1password)"
+test -f /usr/share/applications/1password.desktop
+grep -Fqx 'Exec=/usr/bin/1password %U' /usr/share/applications/1password.desktop
+test -f /usr/share/polkit-1/actions/com.1password.1Password.policy
+test -x "${onepassword_helper}"
+test "$(stat -c '%a:%U:%G' "${onepassword_helper}")" = 2755:root:onepassword
+test "$(getent group onepassword | cut -d: -f3)" = 1001
+test "$(stat -c '%a:%U:%G' "${onepassword_mcp}")" = 2755:root:onepassword-mcp
+test "$(getent group onepassword-mcp | cut -d: -f3)" = 1002
+test "$(stat -c '%a:%U:%G' "${onepassword_sandbox}")" = 4755:root:root
+grep -Fqx zen \
+    /usr/share/factory/etc/1password/custom_allowed_browsers
+grep -Fqx \
+    'L+ /etc/1password/custom_allowed_browsers - - - - /usr/share/factory/etc/1password/custom_allowed_browsers' \
+    /usr/lib/tmpfiles.d/10-zirconium-x9-containers.conf
+grep -Fqx 'g onepassword 1001' \
+    /usr/lib/sysusers.d/zirconium-x9-1password.conf
+grep -Fqx 'g onepassword-mcp 1002' \
+    /usr/lib/sysusers.d/zirconium-x9-1password.conf
+test -f /usr/share/pki/rpm-gpg/RPM-GPG-KEY-1password
 
 # DMS represents Bluetooth codecs as PulseAudio-compatible card profiles and
 # uses pactl to enumerate and select them. pipewire-pulseaudio remains the
