@@ -62,6 +62,7 @@ jobs:
           bash -n scripts/prepare scripts/clean scripts/assert-image scripts/verify-published-image scripts/verify-1password-key
           scripts/verify-1password-key
           bash -n overlay/mkosi.profiles/x9/mkosi.postinst.chroot
+          bash -n overlay/mkosi.profiles/x9/mkosi.extra/usr/lib/systemd/system-sleep/zirconium-x9-fprintd
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.postinst.chroot
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-sign-camera-modules
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-camera-timing

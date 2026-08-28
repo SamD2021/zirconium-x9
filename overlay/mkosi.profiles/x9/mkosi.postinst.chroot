@@ -5,6 +5,7 @@ rpm -q \
     1password \
     alsa-ucm \
     chatgpt \
+    fprintd \
     jq \
     nix \
     nix-daemon \
@@ -108,6 +109,17 @@ test -f /usr/share/pki/rpm-gpg/RPM-GPG-KEY-1password
 # uses pactl to enumerate and select them. pipewire-pulseaudio remains the
 # server; pulseaudio-utils supplies only the compatible client CLI.
 test -x /usr/bin/pactl
+
+# Drop any lock-screen fingerprint claim before suspend and force a clean
+# fprintd/device session after resume.  This avoids the DMS/fprintd race where
+# fingerprint verification begins while systemd is already entering sleep.
+fingerprint_sleep_hook=/usr/lib/systemd/system-sleep/zirconium-x9-fprintd
+test -x "${fingerprint_sleep_hook}"
+test "$(stat -c '%a:%U:%G' "${fingerprint_sleep_hook}")" = 755:root:root
+/usr/bin/bash -n "${fingerprint_sleep_hook}"
+grep -Fqx '        /usr/bin/systemctl kill --kill-whom=all --signal=SIGKILL fprintd.service || true' "${fingerprint_sleep_hook}"
+grep -Fqx '        /usr/bin/systemctl stop --no-block fprintd.service' "${fingerprint_sleep_hook}"
+grep -Fqx '        /usr/bin/systemctl restart fprintd.service' "${fingerprint_sleep_hook}"
 
 # Both desktop and terminal launches pass through the RPM's wrapper. Chromium's
 # command-line switches are stable across Electron versions; its old Ozone

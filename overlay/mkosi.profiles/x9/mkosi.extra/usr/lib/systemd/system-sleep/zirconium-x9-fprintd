@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+set -eu
+
+# DMS starts fingerprint verification while the lock screen is activating.
+# When that races with suspend, fprintd can retain a stale claim or initialize
+# the USB reader against a device that is already suspending.  user.slice is
+# frozen before this hook runs, so an in-flight PAM request cannot finish and a
+# synchronous stop can wait for its timeout.  Kill the disposable daemon and
+# queue its stop without blocking suspend.  Start it again after devices have
+# resumed so the lock screen gets a fresh daemon and device session.
+case "${1:-}" in
+    pre)
+        /usr/bin/systemctl kill --kill-whom=all --signal=SIGKILL fprintd.service || true
+        /usr/bin/systemctl stop --no-block fprintd.service
+        ;;
+    post)
+        /usr/bin/systemctl restart fprintd.service
+        ;;
+esac

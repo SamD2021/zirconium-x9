@@ -19,7 +19,9 @@ included in the stable image; its Mesa
 llvmpipe workaround remains temporary until the Intel GPU synchronization bug
 is fixed. The official ChatGPT launcher selects Chromium's native Wayland
 Ozone backend, including Wayland input-method support, for both desktop and
-terminal launches.
+terminal launches. A system-sleep hook also closes fprintd before hardware
+suspend and starts it from a clean device session after resume, avoiding stale
+fingerprint claims when DMS activates authentication while the lid is closing.
 
 ## Local commands
 
