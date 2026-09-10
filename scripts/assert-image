@@ -21,7 +21,8 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       nix-daemon \
       nix-filesystem \
       policycoreutils-python-utils \
-      pulseaudio-utils
+      pulseaudio-utils \
+      zsh
     onepassword_version="$(rpm -q --qf "%{VERSION}\n" 1password)"
     test "$(printf "%s\n" 8.12.32 "${onepassword_version}" | sort -V | head -n1)" = 8.12.32
     onepassword_root=/usr/lib/1Password
@@ -64,6 +65,8 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       '\''exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"'\'' \
       /usr/lib/chatgpt/codex-launcher
     grep -Fqx "Exec=chatgpt %U" /usr/share/applications/chatgpt.desktop
+    test "$(rpm --query --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\n" kernel-core)" = \
+      7.1.13-200.fc44.x86_64
     speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
     test -f "${speaker_ucm}"
     grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 1\"" "${speaker_ucm}"

@@ -11,7 +11,8 @@ rpm -q \
     nix-daemon \
     nix-filesystem \
     policycoreutils-python-utils \
-    pulseaudio-utils
+    pulseaudio-utils \
+    zsh
 
 onepassword_version="$(rpm -q --qf '%{VERSION}\n' 1password)"
 if [[ "$(printf '%s\n' 8.12.32 "${onepassword_version}" | sort -V | head -n1)" != 8.12.32 ]]; then

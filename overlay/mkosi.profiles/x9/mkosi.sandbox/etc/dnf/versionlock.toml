@@ -1,0 +1,39 @@
+version = "1.0"
+
+# Fedora 44 kernel 7.2.4 omits CONFIG_VIDEO_IMX471, which breaks the X9
+# camera. Keep the complete install-only kernel set on the last known-good
+# build until Fedora restores the sensor driver.
+[[packages]]
+name = "kernel"
+[[packages.conditions]]
+key = "evr"
+comparator = "="
+value = "0:7.1.13-200.fc44"
+
+[[packages]]
+name = "kernel-core"
+[[packages.conditions]]
+key = "evr"
+comparator = "="
+value = "0:7.1.13-200.fc44"
+
+[[packages]]
+name = "kernel-modules"
+[[packages.conditions]]
+key = "evr"
+comparator = "="
+value = "0:7.1.13-200.fc44"
+
+[[packages]]
+name = "kernel-modules-core"
+[[packages.conditions]]
+key = "evr"
+comparator = "="
+value = "0:7.1.13-200.fc44"
+
+[[packages]]
+name = "kernel-modules-extra"
+[[packages.conditions]]
+key = "evr"
+comparator = "="
+value = "0:7.1.13-200.fc44"
