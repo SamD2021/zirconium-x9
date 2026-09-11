@@ -95,6 +95,10 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       /usr/lib/systemd/system/nix-daemon.service.d/10-nix-mount.conf
     grep -Fqx "ExecStart=/usr/bin/restorecon -RF /nix/var/nix/daemon-socket" \
       /usr/lib/systemd/system/nix-state-prepare.service
+    grep -Fqx "DefaultDependencies=no" \
+      /usr/lib/systemd/system/nix-state-prepare.service
+    grep -Fqx "Before=sockets.target nix-daemon.service nix-daemon.socket" \
+      /usr/lib/systemd/system/nix-state-prepare.service
     test "$(matchpathcon -n /var/lib/nix/var/nix/daemon-socket)" = \
       "system_u:object_r:var_run_t:s0"
     test "$(matchpathcon -n /nix/var/nix/daemon-socket)" = \
