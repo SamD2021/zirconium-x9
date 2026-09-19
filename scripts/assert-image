@@ -6,8 +6,10 @@ image="${1:-localhost/zirconium-x9:latest}"
 podman image exists "${image}"
 
 layer_count="$(podman image inspect --format '{{ len .RootFS.Layers }}' "${image}")"
-if (( layer_count > 128 )); then
-    echo "Image has ${layer_count} layers; expected no more than 128" >&2
+# Current Zirconium uses a 256-layer OCI composition. Keep an explicit bound so
+# an unexpectedly layered image is still caught without rejecting that base.
+if (( layer_count > 256 )); then
+    echo "Image has ${layer_count} layers; expected no more than 256" >&2
     exit 1
 fi
 
