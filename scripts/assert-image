@@ -19,6 +19,8 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       alsa-ucm \
       chatgpt \
       fprintd \
+      kernel-core \
+      linux-firmware \
       nix \
       nix-daemon \
       nix-filesystem \
@@ -67,8 +69,6 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       '\''exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"'\'' \
       /usr/lib/chatgpt/codex-launcher
     grep -Fqx "Exec=chatgpt %U" /usr/share/applications/chatgpt.desktop
-    test "$(rpm --query --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\n" kernel-core)" = \
-      7.1.13-200.fc44.x86_64
     speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
     test -f "${speaker_ucm}"
     grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 1\"" "${speaker_ucm}"
@@ -119,6 +119,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       /usr/lib/systemd/system/nix-daemon.socket
 
     if test -f /usr/lib/zirconium-x9/features/camera-experimental; then
+      /usr/libexec/zirconium-x9-verify-kernel
       rpm -q \
         libcamera \
         libcamera-gstreamer \

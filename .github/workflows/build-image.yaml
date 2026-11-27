@@ -64,6 +64,7 @@ jobs:
           bash -n overlay/mkosi.profiles/x9/mkosi.postinst.chroot
           bash -n overlay/mkosi.profiles/x9/mkosi.extra/usr/lib/systemd/system-sleep/zirconium-x9-fprintd
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.postinst.chroot
+          bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-verify-kernel
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-sign-camera-modules
           bash -n overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/libexec/zirconium-x9-camera-timing
           udevadm verify overlay/mkosi.profiles/x9-camera-experimental/mkosi.extra/usr/lib/udev/rules.d/90-zirconium-x9-camera-timing.rules
@@ -139,7 +140,7 @@ jobs:
           else
             short_sha="${GITHUB_SHA:0:12}"
             date_tag="$(date -u +%Y%m%d)"
-            tags=(latest 44 "sha-${short_sha}" "${date_tag}")
+            tags=(latest 45 "sha-${short_sha}" "${date_tag}")
           fi
 
           for tag in "${tags[@]}"; do

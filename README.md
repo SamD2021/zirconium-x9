@@ -34,6 +34,9 @@ just rechunk
 just lint
 ```
 
+Stable builds follow Fedora 45 kernel updates, requiring kernel 7.2.14 or newer,
+a matching kernel package set, and the in-tree IPU7 and IMX471 camera modules.
+
 Stable builds add pinned Intel IPU7 firmware, Fedora's in-tree IPU7/IMX471 and
 libcamera stack, experimental IMX471 SoftISP color tuning, and a verified
 roughly 33 fps low-light timing profile.
@@ -61,7 +64,7 @@ the colored horizontal bands without granting broad host filesystem access.
 
 The manual `camera` workflow builds, rechunks, asserts, lints, signs, and
 publishes `ghcr.io/samd2021/zirconium-x9:camera` without moving stable tags.
-Normal `main` builds include the camera payload and publish `latest`, `44`, the
+Normal `main` builds include the camera payload and publish `latest`, `45`, the
 commit tag, and the UTC date tag.
 
 The stable image is published as `ghcr.io/samd2021/zirconium-x9:latest` after
