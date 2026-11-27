@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Follow Fedora 45 updates while requiring a complete camera-capable kernel.
+mapfile -t kernels < <(rpm --query --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)
+if (( ${#kernels[@]} != 1 )); then
+    echo "Expected exactly one kernel-core package; found ${#kernels[@]}" >&2
+    exit 1
+fi
+kernel_release="${kernels[0]}"
+if [[ "${kernel_release}" != *.fc45.x86_64 ]] ||
+    [[ "$(printf '%s\n' 7.2.14 "${kernel_release%%-*}" | sort -V | head -n1)" != 7.2.14 ]]; then
+    echo "Expected Fedora 45 kernel 7.2.14 or newer; found ${kernel_release}" >&2
+    exit 1
+fi
+
+for package in kernel kernel-modules kernel-modules-core kernel-modules-extra; do
+    package_release="$(rpm --query --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' "${package}")"
+    if [[ "${package_release}" != "${kernel_release}" ]]; then
+        echo "Kernel package ${package} does not match ${kernel_release}: ${package_release}" >&2
+        exit 1
+    fi
+done
+
+module_root="/usr/lib/modules/${kernel_release}"
+test -d "${module_root}"
+for camera_module in intel-ipu7 intel-ipu7-isys imx471; do
+    camera_module_path="$(find "${module_root}" -type f -name "${camera_module}.ko*" -print -quit)"
+    if [[ -z "${camera_module_path}" ]]; then
+        echo "Required X9 camera module ${camera_module} is missing from ${kernel_release}" >&2
+        exit 1
+    fi
+done
+
+printf 'Validated Fedora 45 kernel %s and X9 camera modules\n' "${kernel_release}"

@@ -36,19 +36,7 @@ rpm --quiet --query \
     pipewire-plugin-libcamera \
     v4l-utils
 
-kernel_release="$(rpm --query --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)"
-if [[ "${kernel_release}" != 7.1.13-200.fc44.x86_64 ]]; then
-    echo "Expected only camera-compatible kernel 7.1.13-200.fc44.x86_64; found: ${kernel_release}" >&2
-    exit 1
-fi
-
-for camera_module in intel-ipu7 intel-ipu7-isys imx471; do
-    camera_module_path="$(find /usr/lib/modules -type f -name "${camera_module}.ko*" -print -quit)"
-    if [[ -z "${camera_module_path}" ]]; then
-        echo "Required X9 camera module ${camera_module} is missing" >&2
-        exit 1
-    fi
-done
+/usr/libexec/zirconium-x9-verify-kernel
 
 systemd-analyze verify \
     /usr/lib/systemd/system/zirconium-x9-camera-timing@.service

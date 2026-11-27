@@ -19,6 +19,8 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       alsa-ucm \
       chatgpt \
       fprintd \
+      kernel-core \
+      linux-firmware \
       nix \
       nix-daemon \
       nix-filesystem \
@@ -67,8 +69,6 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       '\''exec "$(dirname "$(readlink -f "$0")")/ChatGPT" --ozone-platform=wayland --enable-wayland-ime "$@"'\'' \
       /usr/lib/chatgpt/codex-launcher
     grep -Fqx "Exec=chatgpt %U" /usr/share/applications/chatgpt.desktop
-    test "$(rpm --query --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\n" kernel-core)" = \
-      7.1.13-200.fc44.x86_64
     speaker_ucm=/usr/share/alsa/ucm2/sof-soundwire/cs35l56+cs42l43-spk.conf
     test -f "${speaker_ucm}"
     grep -Fq "cset \"name='\''cs42l43 Speaker Digital Switch'\'' 1\"" "${speaker_ucm}"
@@ -102,6 +102,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     test "$(matchpathcon -n /nix/var/nix/daemon-socket)" = \
       "system_u:object_r:var_run_t:s0"
     test -f /usr/share/pki/containers/zirconium-x9.pub
+    test "$(readlink /usr/share/factory/etc/containers/policy.json)" = /usr/share/containers/policy.json
     test -f /usr/share/factory/etc/containers/registries.d/samd2021.yaml
     test -f /usr/lib/ostree/prepare-root.conf
     test -n "$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"
@@ -110,7 +111,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       .transports.docker["ghcr.io/zirconium-dev"] and
       .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].type == "sigstoreSigned" and
       .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].signedIdentity.type == "matchRepository"
-    '\'' /usr/share/factory/etc/containers/policy.json >/dev/null
+    '\'' /usr/share/containers/policy.json >/dev/null
     systemd-analyze verify \
       /usr/lib/systemd/system/nix-directory.service \
       /usr/lib/systemd/system/nix.mount \
@@ -119,6 +120,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       /usr/lib/systemd/system/nix-daemon.socket
 
     if test -f /usr/lib/zirconium-x9/features/camera-experimental; then
+      /usr/libexec/zirconium-x9-verify-kernel
       rpm -q \
         libcamera \
         libcamera-gstreamer \
