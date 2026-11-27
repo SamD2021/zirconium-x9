@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'printf "X9 post-install failed at line %s: %s\n" "${LINENO}" "${BASH_COMMAND}" >&2' ERR
 
 rpm -q \
     1password \
@@ -183,7 +184,7 @@ systemd-analyze verify \
     /usr/lib/systemd/system/nix-daemon.service \
     /usr/lib/systemd/system/nix-daemon.socket
 
-policy=/usr/share/factory/etc/containers/policy.json
+policy=/usr/share/containers/policy.json
 public_key=/usr/share/pki/containers/zirconium-x9.pub
 test -f "${policy}"
 test -f "${public_key}"
@@ -200,5 +201,9 @@ jq '
 ' "${policy}" >"${temporary_policy}"
 
 install -m 0644 "${temporary_policy}" "${policy}"
+# Existing X9 deployments have an /etc policy symlink to the former factory
+# location. Keep it resolving to the same signed policy after the upgrade.
+install -d -m 0755 /usr/share/factory/etc/containers
+ln -sfn "${policy}" /usr/share/factory/etc/containers/policy.json
 jq -e '.transports.docker["ghcr.io/zirconium-dev"]' "${policy}" >/dev/null
 jq -e '.transports.docker["ghcr.io/samd2021/zirconium-x9"]' "${policy}" >/dev/null

@@ -102,6 +102,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
     test "$(matchpathcon -n /nix/var/nix/daemon-socket)" = \
       "system_u:object_r:var_run_t:s0"
     test -f /usr/share/pki/containers/zirconium-x9.pub
+    test "$(readlink /usr/share/factory/etc/containers/policy.json)" = /usr/share/containers/policy.json
     test -f /usr/share/factory/etc/containers/registries.d/samd2021.yaml
     test -f /usr/lib/ostree/prepare-root.conf
     test -n "$(find /usr/lib/modules -mindepth 1 -maxdepth 1 -type d -print -quit)"
@@ -110,7 +111,7 @@ podman run --rm --entrypoint=/usr/bin/bash "${image}" -euo pipefail -c '
       .transports.docker["ghcr.io/zirconium-dev"] and
       .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].type == "sigstoreSigned" and
       .transports.docker["ghcr.io/samd2021/zirconium-x9"][0].signedIdentity.type == "matchRepository"
-    '\'' /usr/share/factory/etc/containers/policy.json >/dev/null
+    '\'' /usr/share/containers/policy.json >/dev/null
     systemd-analyze verify \
       /usr/lib/systemd/system/nix-directory.service \
       /usr/lib/systemd/system/nix.mount \
